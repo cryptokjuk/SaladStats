@@ -60,6 +60,10 @@ To package the PWA as an Android app (for example with [PWABuilder](https://www.
 - Never commit your `.env` file. It is already in `.gitignore`.
 - All Salad and stats API routes require a signed-in session.
 
+## Licence
+
+[MIT](LICENSE) — free to use, modify and distribute. If you do something cool with it, a shout-out is always appreciated but never required.
+
 ## Credits
 
 Built by [CryptoKJ](https://x.com/CryptoKj_UK) & AI. If you find it useful, you can [buy me a coffee](https://buymeacoffee.com/cryptokj).
