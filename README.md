@@ -18,7 +18,7 @@ Salad Stats has **no database and no user accounts**. It does not store anything
 
 1. You enter your Salad email. Salad emails you a one-time code, and the app checks it with Salad's API. Your Salad password is never seen.
 2. Salad returns its own session cookies. The app compresses and **encrypts** them (AES-256-GCM, key derived from your `AUTH_SECRET`) and puts them in an `httpOnly`, `Secure`, `SameSite=Lax` cookie on **your own device**. JavaScript in the page cannot read it, and it is unreadable without the server's secret.
-3. The cookie has no expiry date, so it disappears when you close the app or browser, and it also carries a hard **1-hour** limit. After that you sign in again.
+3. The cookie has no expiry date, so it disappears when you close the app or browser, and it also carries a hard **10-minute** limit. After that you sign in again.
 4. **Sign out** deletes the cookie immediately.
 5. Every stats/demand API route requires a valid session, and the sign-in route rejects cross-site requests.
 

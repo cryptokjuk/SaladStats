@@ -60,7 +60,7 @@ export function SettingsClient({ userName, userEmail }: { userName: string; user
         </div>
         <p className="text-xs text-muted-foreground">
           Nothing is saved on our server. Your sign-in is kept only on this device and ends when you close the app,
-          sign out, or after 1 hour, whichever comes first.
+          sign out, or after 10 minutes, whichever comes first.
         </p>
       </div>
 

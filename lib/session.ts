@@ -11,7 +11,7 @@ import type { NextResponse } from 'next/server'
  * and it carries a hard expiry so it can never live longer than SESSION_MAX_AGE_MS.
  */
 export const SESSION_COOKIE = 'ss_session'
-export const SESSION_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour, then sign in again
+export const SESSION_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes, then sign in again
 
 export type AppSession = { salad: string; email: string; username: string | null; exp: number }
 
