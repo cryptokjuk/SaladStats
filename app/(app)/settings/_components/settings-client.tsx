@@ -1,48 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
-import { LogOut, Trash2, User, Mail, CheckCircle, XCircle } from 'lucide-react'
+import { LogOut, User, Mail, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { SaladConnectForm } from '@/components/salad-connect-form'
 import { AppearancePicker } from '@/components/appearance-picker'
 
-export function SettingsClient({
-  hasKey,
-  userName,
-  userEmail,
-}: {
-  hasKey: boolean
-  userName: string
-  userEmail: string
-}) {
-  const router = useRouter()
-  const [removingKey, setRemovingKey] = useState(false)
-  const handleRemoveKey = async () => {
-    setRemovingKey(true)
-    try {
-      const res = await fetch('/api/salad-key', { method: 'DELETE' })
-      if (res.ok) {
-        toast.success('Salad token removed')
-        router.refresh()
-      } else {
-        toast.error('Failed to remove key')
-      }
-    } catch (err: any) {
-      toast.error('Failed to remove key')
-    } finally {
-      setRemovingKey(false)
-    }
-  }
+export function SettingsClient({ userName, userEmail }: { userName: string; userEmail: string }) {
+  const [signingOut, setSigningOut] = useState(false)
 
   const handleSignOut = async () => {
+    setSigningOut(true)
     // Clear service worker caches
     if (typeof navigator !== 'undefined' && navigator?.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage('CLEAR_CACHES')
     }
-    await signOut({ redirectTo: '/login' })
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+    } catch (err) {
+      console.error('Sign out error:', err)
+      toast.error('Could not sign out. Please try again.')
+      setSigningOut(false)
+      return
+    }
+    window.location.replace('/login')
   }
 
   return (
@@ -73,38 +54,14 @@ export function SettingsClient({
       {/* API Key */}
       <div className="bg-card rounded-xl p-4 border border-border mb-4">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Salad Account</h2>
-        <div className="flex items-center gap-2 mb-4">
-          {hasKey ? (
-            <>
-              <CheckCircle className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary">Connected</span>
-            </>
-          ) : (
-            <>
-              <XCircle className="w-4 h-4 text-destructive" />
-              <span className="text-sm text-destructive">Not connected</span>
-            </>
-          )}
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle className="w-4 h-4 text-primary" />
+          <span className="text-sm text-primary">Connected for this session</span>
         </div>
-
-        <p className="text-xs text-muted-foreground mb-3">
-          {hasKey ? 'Sign in again with your Salad email code if your stats stop loading.' : 'Sign in with your Salad email to connect.'}
+        <p className="text-xs text-muted-foreground">
+          Nothing is saved on our server. Your sign-in is kept only on this device and ends when you close the app,
+          sign out, or after 1 hour, whichever comes first.
         </p>
-        <SaladConnectForm />
-
-        {hasKey && (
-          <Button
-            type="button"
-            size="sm"
-            variant="destructive"
-            className="mt-4"
-            onClick={handleRemoveKey}
-            disabled={removingKey}
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1" />
-            {removingKey ? 'Disconnecting...' : 'Disconnect Salad'}
-          </Button>
-        )}
       </div>
 
       {/* About */}
@@ -121,9 +78,10 @@ export function SettingsClient({
         variant="outline"
         className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
         onClick={handleSignOut}
+        disabled={signingOut}
       >
         <LogOut className="w-4 h-4 mr-2" />
-        Sign Out
+        {signingOut ? 'Signing out...' : 'Sign Out'}
       </Button>
     </div>
   )

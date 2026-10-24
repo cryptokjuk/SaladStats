@@ -3,6 +3,6 @@ const nextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   images: { unoptimized: true },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

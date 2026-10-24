@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
-import { prisma } from '@/lib/db'
+import { getSession, clearSessionCookie } from '@/lib/session'
 import { saladFetch, normalizeEarnings, computeRates } from '@/lib/salad-server'
 
 const MINUTE = 60_000
@@ -51,31 +50,24 @@ async function getMachineStatus(stored: string) {
   }
 }
 export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Please sign in again.' }, { status: 401 })
   }
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { saladApiKey: true },
-  })
-  if (!user?.saladApiKey) {
-    return NextResponse.json({ error: 'No Salad token configured' }, { status: 400 })
-  }
+  const salad = session.salad
 
   try {
     const [profile, balance, history, machines] = await Promise.all([
-      saladFetch(user.saladApiKey, 'v1/profile'),
-      saladFetch(user.saladApiKey, 'v1/profile/balance'),
-      saladFetch(user.saladApiKey, 'v2/reports/30-day-earning-history'),
-      getMachineStatus(user.saladApiKey),
+      saladFetch(salad, 'v1/profile'),
+      saladFetch(salad, 'v1/profile/balance'),
+      saladFetch(salad, 'v2/reports/30-day-earning-history'),
+      getMachineStatus(salad),
     ])
 
     if (profile.status === 401 || balance.status === 401) {
-      return NextResponse.json(
-        { error: 'Your Salad token has expired or is invalid. Please sign in to Salad again in Settings.', expired: true },
-        { status: 401 }
-      )
+      const out = NextResponse.json({ error: 'Your Salad session has ended. Please sign in again.', expired: true }, { status: 401 })
+      clearSessionCookie(out)
+      return out
     }
 
     const earnings = normalizeEarnings(history.data)
@@ -96,6 +88,6 @@ export async function GET() {
     })
   } catch (error: any) {
     console.error('Salad stats error:', error)
-    return NextResponse.json({ error: 'Failed to reach Salad', details: error?.message }, { status: 502 })
+    return NextResponse.json({ error: 'Failed to reach Salad' }, { status: 502 })
   }
 }

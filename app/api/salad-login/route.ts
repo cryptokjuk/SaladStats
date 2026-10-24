@@ -1,9 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
-import { auth } from '@/auth'
-import { prisma } from '@/lib/db'
 import { SALAD_API_BASE, saladFetch, SALAD_BROWSER_HEADERS } from '@/lib/salad-server'
+import { setSessionCookie, isSameOrigin } from '@/lib/session'
 
 // Short-lived cookie (on our domain) holding Salad's pending sign-in session between the two steps.
 const PENDING_COOKIE = 'salad_pending_session'
@@ -44,11 +42,11 @@ function readPending(req: NextRequest): { email: string; cookie: string } {
 /**
  * Two-step Salad sign-in (same as app.salad.io):
  *  step "start"  -> Salad emails a one-time code
- *  step "verify" -> code is exchanged for a Salad session.
- * If the visitor is already signed in to this app, the Salad session is attached to their account.
- * Otherwise an account is found/created for the Salad email and a one-time login ticket is returned.
+ *  step "verify" -> code is exchanged for a Salad session, which is kept ONLY in an encrypted,
+ *                   short-lived cookie on the visitor's device (nothing is stored server-side).
  */
 export async function POST(req: NextRequest) {
+  if (!isSameOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const body = await req.json().catch(() => ({}))
   const step = body?.step
 
@@ -97,8 +95,6 @@ export async function POST(req: NextRequest) {
       }
 
       const verifyCookies = cookiePairs(res)
-      console.log('Salad verify ok; cookies set:', verifyCookies.map((c) => c.split('=')[0]).join(', ') || '(none)',
-        '| body keys:', data && typeof data === 'object' ? Object.keys(data).join(', ') : typeof data)
       // The sign-in init token is only for the two sign-in steps; keep the real session cookies.
       let stored = mergeCookies(verifyCookies.filter((c) => !c.startsWith('sInitToken=')))
       const bodyToken = data?.token ?? data?.accessToken ?? data?.access_token
@@ -115,27 +111,10 @@ export async function POST(req: NextRequest) {
       }
       const username: string | null = profile.data?.username ?? null
 
-      const session = await auth()
-      let ticket: string | null = null
-      if (session?.user?.id) {
-        await prisma.user.update({ where: { id: session.user.id }, data: { saladApiKey: stored } })
-      } else {
-        const email = String(profile.data?.email ?? pending.email ?? '').trim().toLowerCase()
-        if (!email) {
-          return NextResponse.json({ error: 'Your sign-in session expired. Please request a new code.' }, { status: 400 })
-        }
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: { saladApiKey: stored, ...(username ? { name: username } : {}) },
-          create: { email, name: username, saladApiKey: stored, emailVerified: new Date() },
-        })
-        ticket = randomBytes(32).toString('hex')
-        await prisma.verificationToken.create({
-          data: { identifier: `salad-login:${user.id}`, token: ticket, expires: new Date(Date.now() + 2 * 60 * 1000) },
-        })
-      }
+      const email = String(profile.data?.email ?? pending.email ?? '').trim().toLowerCase()
 
-      const out = NextResponse.json({ success: true, username, ticket })
+      const out = NextResponse.json({ success: true, username })
+      setSessionCookie(out, { salad: stored, email, username })
       out.cookies.set(PENDING_COOKIE, '', { ...COOKIE_OPTS, maxAge: 0 })
       return out
     }

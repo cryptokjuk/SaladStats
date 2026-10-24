@@ -1,9 +1,22 @@
+# dependencies
 node_modules/
+.yarn/
+.pnp.*
+
+# builds
 .next/
-.build/
 out/
-.env
-.env*.local
-*.log
+build/
+dist/
 *.tsbuildinfo
+
+# secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# misc
 .DS_Store
+*.log
+.vscode/
+.idea/

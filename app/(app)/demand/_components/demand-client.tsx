@@ -29,6 +29,7 @@ export function DemandClient() {
     setError(null)
     try {
       const res = await fetch('/api/salad/demand', { cache: 'no-store' })
+      if (res.status === 401) return void window.location.replace('/login')
       const json = await res.json().catch(() => ({}))
       if (res.ok && Array.isArray(json?.gpus)) setGpus(json.gpus)
       else setError(json?.error ?? 'Could not load GPU demand')

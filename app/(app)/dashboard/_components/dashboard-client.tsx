@@ -55,6 +55,7 @@ export function DashboardClient() {
     else setLoading(true)
     try {
       const res = await fetch('/api/salad/stats', { cache: 'no-store' })
+      if (res.status === 401) return void window.location.replace('/login')
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
         setData({
@@ -173,9 +174,6 @@ export function DashboardClient() {
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>
               {data?.errors?.join(' · ')}
-              {data?.expired && (
-                <> <Link href="/settings" className="underline font-medium">Update token</Link></>
-              )}
             </span>
           </div>
         </div>

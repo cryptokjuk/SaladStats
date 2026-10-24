@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import { Mail, KeyRound, ArrowRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +19,7 @@ async function post(body: Record<string, string>) {
 }
 
 /** Signs in to Salad with the same email + emailed-code flow as app.salad.io. */
-export function SaladConnectForm({ onConnected }: { onConnected?: () => void }) {
+export function SaladConnectForm() {
   const router = useRouter()
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
@@ -51,19 +50,8 @@ export function SaladConnectForm({ onConnected }: { onConnected?: () => void }) 
     try {
       const { ok, data } = await post({ step: 'verify', code: code.trim() })
       if (!ok) return void toast.error(data?.error ?? 'Could not verify code')
-      if (data?.ticket) {
-        // Not signed in yet: exchange the one-time ticket for an app session
-        const result = await signIn('salad', { ticket: data.ticket, redirect: false })
-        if (result?.error) return void toast.error('Could not complete sign-in. Please request a new code.')
-        toast.success(data?.username ? `Welcome, ${data.username}!` : 'Signed in!')
-        router.replace('/dashboard')
-        return
-      }
-      toast.success(data?.username ? `Connected as ${data.username}!` : 'Salad account connected!')
-      setCode('')
-      setStep('email')
-      onConnected?.()
-      window.location.reload()
+      toast.success(data?.username ? `Welcome, ${data.username}!` : 'Signed in!')
+      router.replace('/dashboard')
     } catch (err) {
       console.error(err)
       toast.error('Could not reach the server')

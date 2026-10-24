@@ -17,6 +17,7 @@ export function EarningsClient() {
       setLoading(true)
       try {
         const res = await fetch('/api/salad/stats', { cache: 'no-store' })
+        if (res.status === 401) return void window.location.replace('/login')
         const json = await res.json().catch(() => ({}))
         if (res.ok) {
           const all: any[] = Array.isArray(json?.earnings) ? json.earnings : []

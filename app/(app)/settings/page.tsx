@@ -1,19 +1,7 @@
-import { auth } from '@/auth'
-import { prisma } from '@/lib/db'
+import { getSession } from '@/lib/session'
 import { SettingsClient } from './_components/settings-client'
 
 export default async function SettingsPage() {
-  const session = await auth()
-  const user = await prisma.user.findUnique({
-    where: { id: session?.user?.id ?? '' },
-    select: { saladApiKey: true, name: true, email: true },
-  })
-
-  return (
-    <SettingsClient
-      hasKey={!!user?.saladApiKey}
-      userName={user?.name ?? ''}
-      userEmail={user?.email ?? ''}
-    />
-  )
+  const session = await getSession()
+  return <SettingsClient userName={session?.username ?? ''} userEmail={session?.email ?? ''} />
 }

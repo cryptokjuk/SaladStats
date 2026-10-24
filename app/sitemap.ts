@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const headersList = await headers()
-  const host = headersList.get('x-forwarded-host') ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+  const host = headersList.get('x-forwarded-host') ?? process.env.SITE_URL ?? 'http://localhost:3000'
   const siteUrl = host.startsWith('http') ? host : `https://${host}`
   return [
     {

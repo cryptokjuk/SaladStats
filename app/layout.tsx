@@ -6,14 +6,14 @@ import { Providers } from '@/components/providers'
 
 export const dynamic = "force-dynamic";
 
-// Optional: set NEXT_PUBLIC_GA_MEASUREMENT_ID to enable Google Analytics
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+// Optional: set NEXT_PUBLIC_GA_MEASUREMENT_ID to enable Google Analytics. Empty = no analytics.
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''
 
 const workSans = Work_Sans({ subsets: ['latin'], variable: '--font-sans', weight: ['400', '500', '600', '700', '800'] })
 const splineMono = Spline_Sans_Mono({ subsets: ['latin'], variable: '--font-mono', weight: ['400', '500', '600', '700'] })
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.SITE_URL || 'http://localhost:3000'),
   title: 'Salad Stats',
   description: 'Track your Salad.com earnings on the go',
   icons: {

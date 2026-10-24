@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { getSession } from '@/lib/session'
 import { SALAD_API_BASE, SALAD_BROWSER_HEADERS } from '@/lib/salad-server'
 
 export type GpuDemand = {
@@ -31,8 +31,7 @@ function normalizeTier(tier: unknown, name: unknown): string {
 }
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const res = await fetch(`${SALAD_API_BASE}/v2/demand-monitor/gpu`, {
