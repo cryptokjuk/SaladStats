@@ -1,6 +1,6 @@
 # Salad Stats
 
-A mobile-friendly Progressive Web App (PWA) for keeping an eye on your [Salad](https://salad.com) earnings on the go.
+A mobile-friendly Progressive Web App (PWA) for keeping an eye on your [Salad](https://bit.ly/Salad-CryptoKJ) earnings on the go.
 
 > **Unofficial fan project.** Salad Stats is not affiliated with, endorsed by, or supported by Salad Technologies. "Salad" is their trademark.
 
