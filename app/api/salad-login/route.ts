@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       const email = String(profile.data?.email ?? pending.email ?? '').trim().toLowerCase()
 
       const out = NextResponse.json({ success: true, username })
-      setSessionCookie(out, { salad: stored, email, username })
+      setSessionCookie(out, { salad: stored, email, username }, body?.remember === true)
       out.cookies.set(PENDING_COOKIE, '', { ...COOKIE_OPTS, maxAge: 0 })
       return out
     }

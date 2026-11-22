@@ -13,7 +13,10 @@ import type { NextResponse } from 'next/server'
 export const SESSION_COOKIE = 'ss_session'
 export const SESSION_MAX_AGE_MS = 10 * 60 * 1000 // 10 minutes, then sign in again
 
-export type AppSession = { salad: string; email: string; username: string | null; exp: number }
+// Optional, user opt-in only ("Stay signed in for 48 hours"). Off by default.
+export const REMEMBER_MAX_AGE_MS = 48 * 60 * 60 * 1000
+
+export type AppSession = { salad: string; email: string; username: string | null; exp: number; remember?: boolean }
 
 function key(): Buffer {
   const secret = process.env.AUTH_SECRET
@@ -59,13 +62,20 @@ export async function getSession(): Promise<AppSession | null> {
   return raw ? unseal(raw) : null
 }
 
-export function setSessionCookie(res: NextResponse, data: Omit<AppSession, 'exp'>) {
-  const sealed = seal({ ...data, exp: Date.now() + SESSION_MAX_AGE_MS })
+export function setSessionCookie(
+  res: NextResponse,
+  data: Pick<AppSession, 'salad' | 'email' | 'username'>,
+  remember = false,
+) {
+  const ttl = remember ? REMEMBER_MAX_AGE_MS : SESSION_MAX_AGE_MS
+  const sealed = seal({ salad: data.salad, email: data.email, username: data.username, remember, exp: Date.now() + ttl })
   const parts = sealed.match(new RegExp(`.{1,${CHUNK}}`, 'g')) ?? []
   if (parts.length > MAX_CHUNKS) throw new Error('Session too large')
-  // No maxAge/expires => browser-session cookie (gone when the app is closed).
+  // Default: no maxAge => browser-session cookie (gone when the app is closed).
+  // Opt-in "stay signed in": persists up to 48h; the sealed exp still enforces the limit.
+  const opts = remember ? { ...cookieOptions, maxAge: Math.floor(REMEMBER_MAX_AGE_MS / 1000) } : cookieOptions
   for (let i = 0; i < MAX_CHUNKS; i++) {
-    if (i < parts.length) res.cookies.set(`${SESSION_COOKIE}.${i}`, parts[i], cookieOptions)
+    if (i < parts.length) res.cookies.set(`${SESSION_COOKIE}.${i}`, parts[i], opts)
     else res.cookies.set(`${SESSION_COOKIE}.${i}`, '', { ...cookieOptions, maxAge: 0 })
   }
 }

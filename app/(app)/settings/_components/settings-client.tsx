@@ -5,9 +5,40 @@ import { LogOut, User, Mail, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { AppearancePicker } from '@/components/appearance-picker'
+import { Switch } from '@/components/ui/switch'
 
-export function SettingsClient({ userName, userEmail }: { userName: string; userEmail: string }) {
+export function SettingsClient({
+  userName,
+  userEmail,
+  remember: initialRemember,
+}: {
+  userName: string
+  userEmail: string
+  remember: boolean
+}) {
   const [signingOut, setSigningOut] = useState(false)
+  const [remember, setRemember] = useState(initialRemember)
+  const [savingRemember, setSavingRemember] = useState(false)
+
+  const handleRememberChange = async (next: boolean) => {
+    setSavingRemember(true)
+    try {
+      const res = await fetch('/api/session/remember', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remember: next }),
+      })
+      if (res.status === 401) return void window.location.replace('/login')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setRemember(next)
+      toast.success(next ? 'You will stay signed in for 48 hours' : 'Back to 10-minute sessions')
+    } catch (err) {
+      console.error('Stay signed in update failed:', err)
+      toast.error('Could not update. Please try again.')
+    } finally {
+      setSavingRemember(false)
+    }
+  }
 
   const handleSignOut = async () => {
     setSigningOut(true)
@@ -58,9 +89,23 @@ export function SettingsClient({ userName, userEmail }: { userName: string; user
           <CheckCircle className="w-4 h-4 text-primary" />
           <span className="text-sm text-primary">Connected for this session</span>
         </div>
+        <div className="flex items-center justify-between gap-3 py-2 mb-2">
+          <label htmlFor="stay-signed-in" className="text-sm font-medium cursor-pointer">
+            Stay signed in for 48 hours
+          </label>
+          <Switch
+            id="stay-signed-in"
+            checked={remember}
+            onCheckedChange={handleRememberChange}
+            disabled={savingRemember}
+          />
+        </div>
         <p className="text-xs text-muted-foreground">
-          Nothing is saved on our server. Your sign-in is kept only on this device and ends when you close the app,
-          sign out, or after 10 minutes, whichever comes first.
+          Nothing is saved on our server. Your sign-in is kept only on this device, encrypted.{' '}
+          {remember
+            ? 'It stays active for up to 48 hours, even if you close the app, until you sign out.'
+            : 'It ends when you close the app, sign out, or after 10 minutes, whichever comes first.'}{' '}
+          Leave this off on shared devices.
         </p>
       </div>
 

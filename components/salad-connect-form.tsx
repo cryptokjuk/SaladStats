@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 
-async function post(body: Record<string, string>) {
+async function post(body: Record<string, string | boolean>) {
   const res = await fetch('/api/salad-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,6 +25,7 @@ export function SaladConnectForm() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [remember, setRemember] = useState(false)
 
   const sendCode = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -48,7 +49,7 @@ export function SaladConnectForm() {
     if (!code.trim()) return
     setLoading(true)
     try {
-      const { ok, data } = await post({ step: 'verify', code: code.trim() })
+      const { ok, data } = await post({ step: 'verify', code: code.trim(), remember })
       if (!ok) return void toast.error(data?.error ?? 'Could not verify code')
       toast.success(data?.username ? `Welcome, ${data.username}!` : 'Signed in!')
       router.replace('/dashboard')
@@ -84,6 +85,19 @@ export function SaladConnectForm() {
             />
           </div>
         </div>
+        <label htmlFor="stayIn" className="flex items-start gap-2 text-sm cursor-pointer select-none">
+          <input
+            id="stayIn"
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[hsl(var(--primary))]"
+          />
+          <span>
+            Stay signed in for 48 hours
+            <span className="block text-[11px] text-muted-foreground">Leave unticked on shared devices. You can change this in Settings.</span>
+          </span>
+        </label>
         <Button type="submit" className="w-full salad-gradient text-accent-foreground font-semibold hover:brightness-105" disabled={loading}>
           {loading ? 'Verifying...' : 'Verify & Connect'}
           {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
